@@ -16,7 +16,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING id, created_at, updated_at, username, bio, avatar, phone, email, password, status
+RETURNING id
 `
 
 type CreateUserParams struct {
@@ -29,7 +29,7 @@ type CreateUserParams struct {
 	Status   sql.NullString
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
 		arg.Username,
 		arg.Bio,
@@ -39,20 +39,9 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Password,
 		arg.Status,
 	)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Username,
-		&i.Bio,
-		&i.Avatar,
-		&i.Phone,
-		&i.Email,
-		&i.Password,
-		&i.Status,
-	)
-	return i, err
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteUser = `-- name: DeleteUser :exec

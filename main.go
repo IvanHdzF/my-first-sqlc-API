@@ -53,7 +53,7 @@ func insertNewUser(newUser db.User) error {
 		return err
 	}
 	// get the user we just inserted
-	selectUser(insertedUser.ID)
+	selectUser(insertedUser)
 	return nil
 }
 

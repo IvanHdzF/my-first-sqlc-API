@@ -27,7 +27,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING *;
+RETURNING id;
 
 -- name: DeleteUser :exec
 DELETE FROM users
