@@ -66,6 +66,15 @@ func selectUser(selectedID int32) *db.User {
 	log.Println(fetchedUser)
 	return &fetchedUser
 }
+func deleteExistingUser(selectedID int32) error {
+	ctx := context.Background()
+	err := queries.DeleteUser(ctx, selectedID)
+	if err != nil {
+		return err
+	}
+	log.Printf("Deleted user with ID: %v\n", selectedID)
+	return nil
+}
 
 func updateExistingUser(modifiedUser db.User) error {
 	ctx := context.Background()
@@ -154,8 +163,29 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func deleteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	var deletedUser db.User
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	err = json.Unmarshal(bodyBytes, &deletedUser)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	err = deleteExistingUser(deletedUser.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
 func main() {
 	http.HandleFunc("/users", usersHandler)
 	http.HandleFunc("/users/", userHandler)
+	http.HandleFunc("/deleteuser", deleteHandler)
 	http.ListenAndServe(":3000", nil)
 }
