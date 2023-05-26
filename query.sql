@@ -24,10 +24,16 @@ ORDER BY id;
 -- name: CreateUser :one
 INSERT INTO users (
   username, bio, avatar,phone,email,password,status
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
-)
-RETURNING id;
+) 
+SELECT 
+	username,
+	bio,
+	avatar,
+	phone,
+	email,
+	password,
+	status
+FROM json_populate_recordset(null::users, sqlc.arg(payload)) RETURNING id;
 
 -- name: DeleteUser :exec
 DELETE FROM users

@@ -8,37 +8,26 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   username, bio, avatar,phone,email,password,status
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
-)
-RETURNING id
+) 
+SELECT 
+	username,
+	bio,
+	avatar,
+	phone,
+	email,
+	password,
+	status
+FROM json_populate_recordset(null::users, $1) RETURNING id
 `
 
-type CreateUserParams struct {
-	Username string
-	Bio      sql.NullString
-	Avatar   sql.NullString
-	Phone    sql.NullString
-	Email    sql.NullString
-	Password sql.NullString
-	Status   sql.NullString
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, createUser,
-		arg.Username,
-		arg.Bio,
-		arg.Avatar,
-		arg.Phone,
-		arg.Email,
-		arg.Password,
-		arg.Status,
-	)
+func (q *Queries) CreateUser(ctx context.Context, payload json.RawMessage) (int32, error) {
+	row := q.db.QueryRowContext(ctx, createUser, payload)
 	var id int32
 	err := row.Scan(&id)
 	return id, err

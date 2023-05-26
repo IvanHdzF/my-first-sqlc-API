@@ -37,18 +37,11 @@ func selectALL() {
 	userList = users
 }
 
-func insertNewUser(newUser db.User) error {
+func insertNewUser(payload json.RawMessage) error {
 	ctx := context.Background()
 	// create an user
-	insertedUser, err := queries.CreateUser(ctx, db.CreateUserParams{
-		Username: newUser.Username,
-		Bio:      newUser.Bio,
-		Avatar:   newUser.Avatar,
-		Phone:    newUser.Phone,
-		Email:    newUser.Email,
-		Password: newUser.Password,
-		Status:   newUser.Status,
-	})
+	println(payload)
+	insertedUser, err := queries.CreateUser(ctx, payload)
 	if err != nil {
 		return err
 	}
@@ -107,7 +100,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(usersJSON)
 	case http.MethodPost: //Inserts a user
-		var newUser db.User
+		var newUser *json.RawMessage
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -116,11 +109,8 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
-		if newUser.ID != 0 { //Check for illegal stuff
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		insertNewUser(newUser)
+		log.Printf("%v", newUser)
+		//insertNewUser(newUser)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
