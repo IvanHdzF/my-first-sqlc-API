@@ -29,7 +29,7 @@ func init() {
 func selectALL() {
 	ctx := context.Background()
 	// list all users
-	users, err := queries.ListAuthors(ctx)
+	users, err := queries.ListUsers(ctx)
 	if err != nil {
 		return
 	}
@@ -48,7 +48,7 @@ func insertNewUser(newUser db.User) error {
 	}
 	queries := db.New(database)
 	// create an user
-	insertedUser, err := queries.CreateAuthor(ctx, db.CreateAuthorParams{
+	insertedUser, err := queries.CreateUser(ctx, db.CreateUserParams{
 		Username: newUser.Username,
 		Bio:      newUser.Bio,
 		Avatar:   newUser.Avatar,
@@ -67,7 +67,7 @@ func insertNewUser(newUser db.User) error {
 
 func selectUser(selectedID int32) *db.User {
 	ctx := context.Background()
-	fetchedUser, err := queries.GetAuthor(ctx, selectedID)
+	fetchedUser, err := queries.GetUser(ctx, selectedID)
 	if err != nil {
 		return nil
 	}

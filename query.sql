@@ -13,15 +13,15 @@ CREATE TABLE users (
 	CHECK(COALESCE(phone, email) IS NOT NULL)
 );
 
--- name: GetAuthor :one
+-- name: GetUser :one
 SELECT * FROM users
 WHERE id = $1 LIMIT 1;
 
--- name: ListAuthors :many
+-- name: ListUsers :many
 SELECT * FROM users
 ORDER BY id;
 
--- name: CreateAuthor :one
+-- name: CreateUser :one
 INSERT INTO users (
   username, bio, avatar,phone,email,password,status
 ) VALUES (
@@ -29,6 +29,10 @@ INSERT INTO users (
 )
 RETURNING *;
 
--- name: DeleteAuthor :exec
+-- name: DeleteUser :exec
+DELETE FROM users
+WHERE id = $1;
+
+-- name: UpdateUser :exec
 DELETE FROM users
 WHERE id = $1;

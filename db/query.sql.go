@@ -10,7 +10,7 @@ import (
 	"database/sql"
 )
 
-const createAuthor = `-- name: CreateAuthor :one
+const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   username, bio, avatar,phone,email,password,status
 ) VALUES (
@@ -19,7 +19,7 @@ INSERT INTO users (
 RETURNING id, created_at, updated_at, username, bio, avatar, phone, email, password, status
 `
 
-type CreateAuthorParams struct {
+type CreateUserParams struct {
 	Username string
 	Bio      sql.NullString
 	Avatar   sql.NullString
@@ -29,8 +29,8 @@ type CreateAuthorParams struct {
 	Status   sql.NullString
 }
 
-func (q *Queries) CreateAuthor(ctx context.Context, arg CreateAuthorParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createAuthor,
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser,
 		arg.Username,
 		arg.Bio,
 		arg.Avatar,
@@ -55,23 +55,23 @@ func (q *Queries) CreateAuthor(ctx context.Context, arg CreateAuthorParams) (Use
 	return i, err
 }
 
-const deleteAuthor = `-- name: DeleteAuthor :exec
+const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = $1
 `
 
-func (q *Queries) DeleteAuthor(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteAuthor, id)
+func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, id)
 	return err
 }
 
-const getAuthor = `-- name: GetAuthor :one
+const getUser = `-- name: GetUser :one
 SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM users
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetAuthor(ctx context.Context, id int32) (User, error) {
-	row := q.db.QueryRowContext(ctx, getAuthor, id)
+func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -88,13 +88,13 @@ func (q *Queries) GetAuthor(ctx context.Context, id int32) (User, error) {
 	return i, err
 }
 
-const listAuthors = `-- name: ListAuthors :many
+const listUsers = `-- name: ListUsers :many
 SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM users
 ORDER BY id
 `
 
-func (q *Queries) ListAuthors(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, listAuthors)
+func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, listUsers)
 	if err != nil {
 		return nil, err
 	}
@@ -125,4 +125,14 @@ func (q *Queries) ListAuthors(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :exec
+DELETE FROM users
+WHERE id = $1
+`
+
+func (q *Queries) UpdateUser(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, updateUser, id)
+	return err
 }
