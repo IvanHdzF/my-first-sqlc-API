@@ -128,11 +128,39 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 }
 
 const updateUser = `-- name: UpdateUser :exec
-DELETE FROM users
-WHERE id = $1
+UPDATE USERS
+SET 
+	username = $2,
+	bio=$3,
+	avatar=$4,
+	phone=$5,
+	email=$6,
+	password=$7,
+	status=$8
+WHERE ID=$1
 `
 
-func (q *Queries) UpdateUser(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, updateUser, id)
+type UpdateUserParams struct {
+	ID       int32
+	Username string
+	Bio      sql.NullString
+	Avatar   sql.NullString
+	Phone    sql.NullString
+	Email    sql.NullString
+	Password sql.NullString
+	Status   sql.NullString
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.ExecContext(ctx, updateUser,
+		arg.ID,
+		arg.Username,
+		arg.Bio,
+		arg.Avatar,
+		arg.Phone,
+		arg.Email,
+		arg.Password,
+		arg.Status,
+	)
 	return err
 }

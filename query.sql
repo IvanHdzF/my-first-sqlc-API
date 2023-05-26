@@ -34,5 +34,13 @@ DELETE FROM users
 WHERE id = $1;
 
 -- name: UpdateUser :exec
-DELETE FROM users
-WHERE id = $1;
+UPDATE USERS
+SET 
+	username = $2,
+	bio=$3,
+	avatar=$4,
+	phone=$5,
+	email=$6,
+	password=$7,
+	status=$8
+WHERE ID=$1;

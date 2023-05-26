@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -34,19 +35,10 @@ func selectALL() {
 		return
 	}
 	userList = users
-	// log.Println(users)
-	// jsonUsers, _ := json.Marshal(users)
-	// log.Printf("jsonInfo: %s\n", jsonUsers)
-
 }
 
 func insertNewUser(newUser db.User) error {
 	ctx := context.Background()
-	database, err := sql.Open("postgres", "user=postgres password=password dbname=instagram sslmode=disable")
-	if err != nil {
-		return err
-	}
-	queries := db.New(database)
 	// create an user
 	insertedUser, err := queries.CreateUser(ctx, db.CreateUserParams{
 		Username: newUser.Username,
@@ -75,9 +67,29 @@ func selectUser(selectedID int32) *db.User {
 	return &fetchedUser
 }
 
+func updateExistingUser(modifiedUser db.User) error {
+	ctx := context.Background()
+	err := queries.UpdateUser(ctx, db.UpdateUserParams{
+		ID:       modifiedUser.ID,
+		Username: modifiedUser.Username,
+		Bio:      modifiedUser.Bio,
+		Avatar:   modifiedUser.Avatar,
+		Phone:    modifiedUser.Phone,
+		Email:    modifiedUser.Email,
+		Password: modifiedUser.Password,
+		Status:   modifiedUser.Status,
+	})
+	if err != nil {
+		fmt.Printf("Error during User update: %v\n", modifiedUser)
+		return err
+	}
+	log.Println(modifiedUser)
+	return nil
+}
+
 func usersHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-	case http.MethodGet:
+	case http.MethodGet: //Gets all users inside the DB
 		selectALL()
 		usersJSON, err := json.Marshal(userList)
 		if err != nil {
@@ -85,7 +97,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(usersJSON)
-	case http.MethodPost:
+	case http.MethodPost: //Inserts a user
 		var newUser db.User
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -123,21 +135,21 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(usersJSON)
 	case http.MethodPost:
-		//TODO:Add UPDATE support
-
-		// var updatedUser db.User
-		// bodyBytes, err := ioutil.ReadAll(r.Body)
-		// if err != nil {
-		// 	w.WriteHeader(http.StatusBadRequest)
-		// }
-		// err = json.Unmarshal(bodyBytes, &updatedUser)
-		// if err != nil {
-		// 	w.WriteHeader(http.StatusBadRequest)
-		// }
-		//updateUser(updatedUser)
+		var updatedUser db.User
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		err = json.Unmarshal(bodyBytes, &updatedUser)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		err = updateExistingUser(updatedUser)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
-
 	}
 
 }
