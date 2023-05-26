@@ -110,7 +110,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		log.Printf("%v", newUser)
-		//insertNewUser(newUser)
+		insertNewUser(*newUser)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
