@@ -44,26 +44,17 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM users
-WHERE id = $1 LIMIT 1
+select jsonb_build_array(id, username, bio, avatar,phone,email,password,status)
+from (
+	SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM USERS WHERE ID=$1
+)AS sortedUser
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
+func (q *Queries) GetUser(ctx context.Context, id int32) (json.RawMessage, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Username,
-		&i.Bio,
-		&i.Avatar,
-		&i.Phone,
-		&i.Email,
-		&i.Password,
-		&i.Status,
-	)
-	return i, err
+	var jsonb_build_array json.RawMessage
+	err := row.Scan(&jsonb_build_array)
+	return jsonb_build_array, err
 }
 
 const listUsers = `-- name: ListUsers :one

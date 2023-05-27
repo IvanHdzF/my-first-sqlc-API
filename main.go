@@ -50,14 +50,14 @@ func insertNewUser(payload json.RawMessage) error {
 	return nil
 }
 
-func selectUser(selectedID int32) *db.User {
+func selectUser(selectedID int32) json.RawMessage {
 	ctx := context.Background()
 	fetchedUser, err := queries.GetUser(ctx, selectedID)
 	if err != nil {
 		return nil
 	}
 	log.Println(fetchedUser)
-	return &fetchedUser
+	return fetchedUser
 }
 func deleteExistingUser(selectedID int32) error {
 	ctx := context.Background()
@@ -124,12 +124,8 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		selectedUser := selectUser(int32(userID))
-		usersJSON, err := json.Marshal(selectedUser)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(usersJSON)
+		w.Write(selectedUser)
 	case http.MethodPost:
 		var updatedUser db.User
 		bodyBytes, err := ioutil.ReadAll(r.Body)
