@@ -32,14 +32,17 @@ func (q *Queries) CreateUser(ctx context.Context, payload json.RawMessage) (int3
 	return id, err
 }
 
-const deleteUser = `-- name: DeleteUser :exec
+const deleteUser = `-- name: DeleteUser :one
 DELETE FROM users
-WHERE id = $1
+WHERE users.id=(SELECT id FROM jsonb_populate_record(null::users, $1) AS jsonRequest) 
+RETURNING id
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, id)
-	return err
+func (q *Queries) DeleteUser(ctx context.Context, payload json.RawMessage) (int32, error) {
+	row := q.db.QueryRowContext(ctx, deleteUser, payload)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getUser = `-- name: GetUser :one

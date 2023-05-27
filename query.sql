@@ -53,10 +53,10 @@ SELECT
 	status
 FROM jsonb_populate_record(null::users, @payload) RETURNING id;
 
--- name: DeleteUser :exec
+-- name: DeleteUser :one
 DELETE FROM users
-WHERE id = $1;
-
+WHERE users.id=(SELECT id FROM jsonb_populate_record(null::users, sqlc.arg(payload)) AS jsonRequest) 
+RETURNING id;
 -- name: UpdateUser :exec
 UPDATE USERS
 SET (username,bio,avatar,phone,email,password,status)= (SELECT username,bio,avatar,phone,email,password,status 

@@ -16,7 +16,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var userList []db.User
 var queries *db.Queries
 
 func init() {
@@ -59,13 +58,14 @@ func selectUser(selectedID int32) json.RawMessage {
 	log.Println(fetchedUser)
 	return fetchedUser
 }
-func deleteExistingUser(selectedID int32) error {
+func deleteExistingUser(payload json.RawMessage) error {
 	ctx := context.Background()
-	err := queries.DeleteUser(ctx, selectedID)
+	id, err := queries.DeleteUser(ctx, payload)
 	if err != nil {
+		log.Println("Couldn't delete user with this ID") //This usually happens if the selected ID is already deleted
 		return err
 	}
-	log.Printf("Deleted user with ID: %v\n", selectedID)
+	log.Printf("Deleted user with ID: %v\n", id)
 	return nil
 }
 
@@ -152,7 +152,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	var deletedUser db.User
+	var deletedUser json.RawMessage
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -161,7 +161,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
-	err = deleteExistingUser(deletedUser.ID)
+	err = deleteExistingUser(deletedUser)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
