@@ -66,43 +66,18 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 	return i, err
 }
 
-const listUsers = `-- name: ListUsers :many
-SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM users
-ORDER BY id
+const listUsers = `-- name: ListUsers :one
+select jsonb_agg(jsonb_build_array(id, username, bio, avatar,phone,email,password,status))
+from (
+	SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM USERS ORDER BY ID ASC
+)AS sortedUser
 `
 
-func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, listUsers)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Username,
-			&i.Bio,
-			&i.Avatar,
-			&i.Phone,
-			&i.Email,
-			&i.Password,
-			&i.Status,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) ListUsers(ctx context.Context) (json.RawMessage, error) {
+	row := q.db.QueryRowContext(ctx, listUsers)
+	var jsonb_agg json.RawMessage
+	err := row.Scan(&jsonb_agg)
+	return jsonb_agg, err
 }
 
 const updateUser = `-- name: UpdateUser :exec

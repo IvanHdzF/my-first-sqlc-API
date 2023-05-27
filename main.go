@@ -27,14 +27,14 @@ func init() {
 	queries = db.New(database)
 }
 
-func selectALL() {
+func selectALL() json.RawMessage {
 	ctx := context.Background()
 	// list all users
 	users, err := queries.ListUsers(ctx)
 	if err != nil {
-		return
+		return nil
 	}
-	userList = users
+	return users
 }
 
 func insertNewUser(payload json.RawMessage) error {
@@ -92,13 +92,10 @@ func updateExistingUser(modifiedUser db.User) error {
 func usersHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet: //Gets all users inside the DB
-		selectALL()
-		usersJSON, err := json.Marshal(userList)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		usersEncoded := selectALL()
+		//usersJSON, err := json.Marshal(userList)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(usersJSON)
+		w.Write(usersEncoded)
 	case http.MethodPost: //Inserts a user
 		var newUser *json.RawMessage
 		bodyBytes, err := ioutil.ReadAll(r.Body)
