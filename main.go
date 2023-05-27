@@ -69,23 +69,17 @@ func deleteExistingUser(selectedID int32) error {
 	return nil
 }
 
-func updateExistingUser(modifiedUser db.User) error {
+func updateExistingUser(updatedID int32, payload json.RawMessage) error {
 	ctx := context.Background()
 	err := queries.UpdateUser(ctx, db.UpdateUserParams{
-		ID:       modifiedUser.ID,
-		Username: modifiedUser.Username,
-		Bio:      modifiedUser.Bio,
-		Avatar:   modifiedUser.Avatar,
-		Phone:    modifiedUser.Phone,
-		Email:    modifiedUser.Email,
-		Password: modifiedUser.Password,
-		Status:   modifiedUser.Status,
+		ID:                  updatedID,
+		JsonbPopulateRecord: payload,
 	})
 	if err != nil {
-		fmt.Printf("Error during User update: %v\n", modifiedUser)
+		fmt.Printf("Error during User update: %v\n", updatedID)
 		return err
 	}
-	log.Println(modifiedUser)
+	log.Println(updatedID)
 	return nil
 }
 
@@ -127,7 +121,14 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(selectedUser)
 	case http.MethodPost:
-		var updatedUser db.User
+		urlPathSegments := strings.Split(r.URL.Path, "users/")
+		userID, err := strconv.Atoi(urlPathSegments[len(urlPathSegments)-1])
+		formattedUserID := int32(userID)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		var updatedUser json.RawMessage
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -136,7 +137,7 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
-		err = updateExistingUser(updatedUser)
+		err = updateExistingUser(formattedUserID, updatedUser)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}

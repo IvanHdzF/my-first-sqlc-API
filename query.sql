@@ -51,7 +51,7 @@ SELECT
 	email,
 	password,
 	status
-FROM jsonb_populate_record(null::users, sqlc.arg(payload)) RETURNING id;
+FROM jsonb_populate_record(null::users, @payload) RETURNING id;
 
 -- name: DeleteUser :exec
 DELETE FROM users
@@ -59,12 +59,6 @@ WHERE id = $1;
 
 -- name: UpdateUser :exec
 UPDATE USERS
-SET 
-	username = $2,
-	bio=$3,
-	avatar=$4,
-	phone=$5,
-	email=$6,
-	password=$7,
-	status=$8
-WHERE ID=$1;
+SET (username,bio,avatar,phone,email,password,status)= (SELECT username,bio,avatar,phone,email,password,status 
+														FROM jsonb_populate_record(null::users, $1))
+WHERE users.id=sqlc.arg(id);

@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 )
 
@@ -87,38 +86,17 @@ func (q *Queries) ListUsers(ctx context.Context) (json.RawMessage, error) {
 
 const updateUser = `-- name: UpdateUser :exec
 UPDATE USERS
-SET 
-	username = $2,
-	bio=$3,
-	avatar=$4,
-	phone=$5,
-	email=$6,
-	password=$7,
-	status=$8
-WHERE ID=$1
+SET (username,bio,avatar,phone,email,password,status)= (SELECT username,bio,avatar,phone,email,password,status 
+														FROM jsonb_populate_record(null::users, $1))
+WHERE users.id=$2
 `
 
 type UpdateUserParams struct {
-	ID       int32
-	Username string
-	Bio      sql.NullString
-	Avatar   sql.NullString
-	Phone    sql.NullString
-	Email    sql.NullString
-	Password sql.NullString
-	Status   sql.NullString
+	JsonbPopulateRecord json.RawMessage
+	ID                  int32
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser,
-		arg.ID,
-		arg.Username,
-		arg.Bio,
-		arg.Avatar,
-		arg.Phone,
-		arg.Email,
-		arg.Password,
-		arg.Status,
-	)
+	_, err := q.db.ExecContext(ctx, updateUser, arg.JsonbPopulateRecord, arg.ID)
 	return err
 }
