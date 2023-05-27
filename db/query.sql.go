@@ -23,7 +23,7 @@ SELECT
 	email,
 	password,
 	status
-FROM json_populate_recordset(null::users, $1) RETURNING id
+FROM jsonb_populate_record(null::users, $1) RETURNING id
 `
 
 func (q *Queries) CreateUser(ctx context.Context, payload json.RawMessage) (int32, error) {
@@ -44,23 +44,37 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
 }
 
 const getUser = `-- name: GetUser :one
-select jsonb_build_array(id, username, bio, avatar,phone,email,password,status)
+select jsonb_build_object(
+	'id',id, 
+	'username',username, 
+	'avatar',avatar,
+	'phone',phone,
+	'email',email,
+	'password',password,
+	'status',status)
 from (
 	SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM USERS WHERE ID=$1
-)AS sortedUser
+)AS selectedUser
 `
 
 func (q *Queries) GetUser(ctx context.Context, id int32) (json.RawMessage, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
-	var jsonb_build_array json.RawMessage
-	err := row.Scan(&jsonb_build_array)
-	return jsonb_build_array, err
+	var jsonb_build_object json.RawMessage
+	err := row.Scan(&jsonb_build_object)
+	return jsonb_build_object, err
 }
 
 const listUsers = `-- name: ListUsers :one
-select jsonb_agg(jsonb_build_array(id, username, bio, avatar,phone,email,password,status))
+select jsonb_agg(jsonb_build_object(
+	'id',id, 
+	'username',username, 
+	'avatar',avatar,
+	'phone',phone,
+	'email',email,
+	'password',password,
+	'status',status))
 from (
-	SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM USERS ORDER BY ID ASC
+	SELECT id, created_at, updated_at, username, bio, avatar, phone, email, password, status FROM USERS ORDER BY id ASC
 )AS sortedUser
 `
 

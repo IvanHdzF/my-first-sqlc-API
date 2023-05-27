@@ -14,12 +14,30 @@ CREATE TABLE users (
 );
 
 -- name: GetUser :one
-SELECT * FROM users
-WHERE id = $1 LIMIT 1;
+select jsonb_build_object(
+	'id',id, 
+	'username',username, 
+	'avatar',avatar,
+	'phone',phone,
+	'email',email,
+	'password',password,
+	'status',status)
+from (
+	SELECT * FROM USERS WHERE ID=$1
+)AS selectedUser;
 
--- name: ListUsers :many
-SELECT * FROM users
-ORDER BY id;
+-- name: ListUsers :one
+select jsonb_agg(jsonb_build_object(
+	'id',id, 
+	'username',username, 
+	'avatar',avatar,
+	'phone',phone,
+	'email',email,
+	'password',password,
+	'status',status))
+from (
+	SELECT * FROM USERS ORDER BY id ASC
+)AS sortedUser;
 
 -- name: CreateUser :one
 INSERT INTO users (
@@ -33,7 +51,7 @@ SELECT
 	email,
 	password,
 	status
-FROM json_populate_recordset(null::users, sqlc.arg(payload)) RETURNING id;
+FROM jsonb_populate_record(null::users, sqlc.arg(payload)) RETURNING id;
 
 -- name: DeleteUser :exec
 DELETE FROM users
