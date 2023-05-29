@@ -13,6 +13,19 @@ CREATE TABLE users (
 	CHECK(COALESCE(phone, email) IS NOT NULL)
 );
 
+CREATE TABLE posts (
+    id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    url character varying(200) NOT NULL,
+    caption character varying(240),
+    lat real,
+    lng real,
+    user_id integer NOT NULL,
+    CONSTRAINT posts_lat_check CHECK (((lat IS NULL) OR ((lat >= ('-90'::integer)::double precision) AND (lat <= (90)::double precision)))),
+    CONSTRAINT posts_lng_check CHECK (((lng IS NULL) OR ((lng >= ('-180'::integer)::double precision) AND (lng <= (180)::double precision))))
+  );
+
 -- name: GetUser :one
 select jsonb_build_object(
 	'id',id, 
@@ -62,3 +75,9 @@ UPDATE USERS
 SET (username,bio,avatar,phone,email,password,status)= (SELECT username,bio,avatar,phone,email,password,status 
 														FROM jsonb_populate_record(null::users, $1))
 WHERE users.id=sqlc.arg(id);
+
+-- name: GetUserPosts :many
+SELECT username, url,caption
+FROM posts AS p
+JOIN users AS u ON p.user_id=u.id
+WHERE p.id=(SELECT id FROM jsonb_populate_record(null::users, @payload));

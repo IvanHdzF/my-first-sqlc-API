@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 )
 
@@ -102,4 +103,40 @@ type UpdateUserParams struct {
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 	_, err := q.db.ExecContext(ctx, updateUser, arg.JsonbPopulateRecord, arg.ID)
 	return err
+}
+
+const getUserPosts = `-- name: getUserPosts :many
+SELECT username, url,caption
+FROM posts AS p
+JOIN users AS u ON p.user_id=u.id
+WHERE p.id=(SELECT id FROM jsonb_populate_record(null::users, $1))
+`
+
+type getUserPostsRow struct {
+	Username string
+	Url      string
+	Caption  sql.NullString
+}
+
+func (q *Queries) GetUserPosts(ctx context.Context, payload json.RawMessage) ([]getUserPostsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserPosts, payload)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []getUserPostsRow
+	for rows.Next() {
+		var i getUserPostsRow
+		if err := rows.Scan(&i.Username, &i.Url, &i.Caption); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

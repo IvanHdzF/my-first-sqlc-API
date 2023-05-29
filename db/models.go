@@ -8,6 +8,17 @@ import (
 	"database/sql"
 )
 
+type Post struct {
+	ID        int32
+	CreatedAt sql.NullTime
+	UpdatedAt sql.NullTime
+	Url       string
+	Caption   sql.NullString
+	Lat       sql.NullFloat64
+	Lng       sql.NullFloat64
+	UserID    int32
+}
+
 type User struct {
 	ID        int32
 	CreatedAt sql.NullTime
