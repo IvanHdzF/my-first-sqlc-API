@@ -83,6 +83,18 @@ func updateExistingUser(updatedID int32, payload json.RawMessage) error {
 	return nil
 }
 
+func getPosts(payload json.RawMessage) error {
+	ctx := context.Background()
+	userPostsData, err := queries.GetUserPosts(ctx, payload)
+	if err != nil {
+		fmt.Printf("Error retrieving posts for user: %v\n", userPostsData)
+		return err
+	}
+	log.Println(userPostsData)
+	return nil
+
+}
+
 func usersHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet: //Gets all users inside the DB
@@ -167,9 +179,30 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getPostsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	var userID json.RawMessage
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	err = json.Unmarshal(bodyBytes, &userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	err = getPosts(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
 func main() {
 	http.HandleFunc("/users", usersHandler)
 	http.HandleFunc("/users/", userHandler)
 	http.HandleFunc("/deleteuser", deleteHandler)
+	http.HandleFunc("/getposts", getPostsHandler)
 	http.ListenAndServe(":3000", nil)
 }
