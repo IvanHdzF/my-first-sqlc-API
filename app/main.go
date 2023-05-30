@@ -83,15 +83,31 @@ func updateExistingUser(updatedID int32, payload json.RawMessage) error {
 	return nil
 }
 
-func getPosts(payload json.RawMessage) error {
+func getPosts(payload json.RawMessage) (json.RawMessage, error) {
 	ctx := context.Background()
 	userPostsData, err := queries.GetUserPosts(ctx, payload)
 	if err != nil {
 		fmt.Printf("Error retrieving posts for user: %v\n", userPostsData)
-		return err
+		return nil, err
 	}
-	log.Println(userPostsData)
-	return nil
+
+	userPostsDataJSON, err := json.Marshal(userPostsData)
+	if err != nil {
+		return nil, err
+	}
+	return userPostsDataJSON, nil
+
+}
+
+func getTopTenPostersFunc() (json.RawMessage, error) {
+	ctx := context.Background()
+	userPostsData, err := queries.GetTopTenPosters(ctx)
+	if err != nil {
+		fmt.Printf("Error retrieving information about the top 10 posters\n")
+		return nil, err
+	}
+
+	return userPostsData, nil
 
 }
 
@@ -193,10 +209,24 @@ func getPostsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
-	err = getPosts(userID)
+	userPostDataJSON, err := getPosts(userID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
+	w.Write(userPostDataJSON)
+}
+
+func topHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userPostDataJSON, err := getTopTenPostersFunc()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	w.Write(userPostDataJSON)
 }
 
 func main() {
@@ -204,5 +234,6 @@ func main() {
 	http.HandleFunc("/users/", userHandler)
 	http.HandleFunc("/deleteuser", deleteHandler)
 	http.HandleFunc("/getposts", getPostsHandler)
+	http.HandleFunc("/toptenposters", topHandler)
 	http.ListenAndServe(":3000", nil)
 }

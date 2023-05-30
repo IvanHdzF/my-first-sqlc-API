@@ -46,6 +46,28 @@ func (q *Queries) DeleteUser(ctx context.Context, payload json.RawMessage) (int3
 	return id, err
 }
 
+const getTopTenPosters = `-- name: GetTopTenPosters :one
+WITH JSONTopTen AS (select jsonb_build_object(
+	'id',u.id, 
+	'username',username, 
+	'count post',COUNT(*))  AS result
+FROM posts AS p
+JOIN users AS u ON p.user_id=u.id
+GROUP BY u.id,username
+ORDER BY COUNT(*) DESC,username
+LIMIT 10)
+
+SELECT json_agg(result)
+FROM JSONTopten
+`
+
+func (q *Queries) GetTopTenPosters(ctx context.Context) (json.RawMessage, error) {
+	row := q.db.QueryRowContext(ctx, getTopTenPosters)
+	var json_agg json.RawMessage
+	err := row.Scan(&json_agg)
+	return json_agg, err
+}
+
 const getUser = `-- name: GetUser :one
 select jsonb_build_object(
 	'id',id, 
@@ -65,6 +87,42 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (json.RawMessage, error
 	var jsonb_build_object json.RawMessage
 	err := row.Scan(&jsonb_build_object)
 	return jsonb_build_object, err
+}
+
+const getUserPosts = `-- name: GetUserPosts :many
+SELECT username, url,caption
+FROM posts AS p
+JOIN users AS u ON p.user_id=u.id
+WHERE u.id=(SELECT id FROM jsonb_populate_record(null::users, $1))
+`
+
+type GetUserPostsRow struct {
+	Username string
+	Url      string
+	Caption  sql.NullString
+}
+
+func (q *Queries) GetUserPosts(ctx context.Context, payload json.RawMessage) ([]GetUserPostsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserPosts, payload)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserPostsRow
+	for rows.Next() {
+		var i GetUserPostsRow
+		if err := rows.Scan(&i.Username, &i.Url, &i.Caption); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listUsers = `-- name: ListUsers :one
@@ -103,40 +161,4 @@ type UpdateUserParams struct {
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 	_, err := q.db.ExecContext(ctx, updateUser, arg.JsonbPopulateRecord, arg.ID)
 	return err
-}
-
-const getUserPosts = `-- name: getUserPosts :many
-SELECT username, url,caption
-FROM posts AS p
-JOIN users AS u ON p.user_id=u.id
-WHERE p.id=(SELECT id FROM jsonb_populate_record(null::users, $1))
-`
-
-type getUserPostsRow struct {
-	Username string
-	Url      string
-	Caption  sql.NullString
-}
-
-func (q *Queries) GetUserPosts(ctx context.Context, payload json.RawMessage) ([]getUserPostsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getUserPosts, payload)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []getUserPostsRow
-	for rows.Next() {
-		var i getUserPostsRow
-		if err := rows.Scan(&i.Username, &i.Url, &i.Caption); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }

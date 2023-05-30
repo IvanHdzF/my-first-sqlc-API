@@ -80,4 +80,18 @@ WHERE users.id=sqlc.arg(id);
 SELECT username, url,caption
 FROM posts AS p
 JOIN users AS u ON p.user_id=u.id
-WHERE p.id=(SELECT id FROM jsonb_populate_record(null::users, @payload));
+WHERE u.id=(SELECT id FROM jsonb_populate_record(null::users, @payload));
+
+-- name: GetTopTenPosters :one
+WITH JSONTopTen AS (select jsonb_build_object(
+	'id',u.id, 
+	'username',username, 
+	'count post',COUNT(*))  AS result
+FROM posts AS p
+JOIN users AS u ON p.user_id=u.id
+GROUP BY u.id,username
+ORDER BY COUNT(*) DESC,username
+LIMIT 10)
+
+SELECT json_agg(result)
+FROM JSONTopten;
