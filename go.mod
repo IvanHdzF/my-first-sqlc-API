@@ -1,4 +1,4 @@
-module tutorial.sqlc.dev/app
+module github.com/IvanHdzF/my-first-sqlc-API
 
 go 1.18
 

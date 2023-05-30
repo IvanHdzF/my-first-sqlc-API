@@ -11,8 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"tutorial.sqlc.dev/app/db"
-
+	"github.com/IvanHdzF/my-first-sqlc-API/db"
 	_ "github.com/lib/pq"
 )
 
