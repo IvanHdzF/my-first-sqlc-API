@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/IvanHdzF/my-first-sqlc-API/cors"
 	"github.com/IvanHdzF/my-first-sqlc-API/db"
 	_ "github.com/lib/pq"
 )
@@ -229,10 +230,15 @@ func topHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/users", usersHandler)
-	http.HandleFunc("/users/", userHandler)
-	http.HandleFunc("/deleteuser", deleteHandler)
-	http.HandleFunc("/getposts", getPostsHandler)
-	http.HandleFunc("/toptenposters", topHandler)
+	handleUsers := http.HandlerFunc(usersHandler)
+	handleUser := http.HandlerFunc(userHandler)
+	handleDeleteUser := http.HandlerFunc(deleteHandler)
+	handleGetPosts := http.HandlerFunc(getPostsHandler)
+	handleTopTenPosters := http.HandlerFunc(topHandler)
+	http.Handle("/users", cors.Middleware(handleUsers))
+	http.Handle("/users/", cors.Middleware(handleUser))
+	http.Handle("/deleteuser", cors.Middleware(handleDeleteUser))
+	http.Handle("/getposts", cors.Middleware(handleGetPosts))
+	http.Handle("/gettopten", cors.Middleware(handleTopTenPosters))
 	http.ListenAndServe(":3000", nil)
 }
