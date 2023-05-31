@@ -130,6 +130,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("%v", newUser)
 		insertNewUser(*newUser)
+	case http.MethodOptions:
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
@@ -169,6 +170,8 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
+	case http.MethodOptions:
+
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -176,8 +179,11 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodPost && r.Method != http.MethodOptions {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	if r.Method == http.MethodOptions {
 		return
 	}
 	var deletedUser json.RawMessage
@@ -196,8 +202,11 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPostsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodPost && r.Method != http.MethodOptions {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	if r.Method == http.MethodOptions {
 		return
 	}
 	var userID json.RawMessage
@@ -217,11 +226,13 @@ func getPostsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func topHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodPost && r.Method != http.MethodOptions {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-
+	if r.Method == http.MethodOptions {
+		return
+	}
 	userPostDataJSON, err := getTopTenPostersFunc()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
